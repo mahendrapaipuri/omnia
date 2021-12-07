@@ -1,0 +1,10 @@
+[[runners]]
+  [runners.custom]
+    config_exec = "/opt/jacamar/bin/jacamar-auth"
+    config_args = ["config", "--configuration", "/etc/gitlab-runner/custom-config.toml"]
+    prepare_exec = "/opt/jacamar/bin/jacamar-auth"
+    prepare_args = ["prepare"]
+    run_exec = "/opt/jacamar/bin/jacamar-auth"
+    run_args = ["run"]
+    cleanup_exec = "/opt/jacamar/bin/jacamar-auth"
+    cleanup_args = ["cleanup", "--configuration", "/etc/gitlab-runner/custom-config.toml"]

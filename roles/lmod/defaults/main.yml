@@ -1,0 +1,69 @@
+---
+
+# -----------------------------------------------------------------------------
+# base settings
+# -----------------------------------------------------------------------------
+
+lmod_version: '7.7.32'
+
+lmod_install: yes
+
+lmod_prefix: '/shared/apps'
+
+lmod_module_root_path: '{{ lmod_prefix }}/modulefiles'
+
+# -----------------------------------------------------------------------------
+# spider cache
+# -----------------------------------------------------------------------------
+
+lmod_spider_cache_dir: '{{ lmod_module_root_path }}/.spider-cache'
+
+lmod_spider_cache_stamp_file: '{{ lmod_module_root_path }}/.spider-cache.stamp'
+
+lmod_spider_cache_cron: no
+
+lmod_spider_cache_cron_minute: '0'
+
+lmod_spider_cache_cron_modulepath:
+  - '$MODULEPATH'
+
+# -----------------------------------------------------------------------------
+# shell configuration
+# -----------------------------------------------------------------------------
+
+lmod_init_bash_file: 'z00-lmod.sh'
+
+lmod_init_csh_file: 'z00-lmod.csh'
+
+# -----------------------------------------------------------------------------
+# canary
+# -----------------------------------------------------------------------------
+
+# values:
+#
+# - opt-in: installs custom scripts that init lmod
+#   if opt-in file exists (see below)
+#
+# - opt-in-skel: same as opt-in plus automatically opt-in new users via
+#   skeleton in /etc/skel
+#
+# - opt-out: installs custom scripts that don't init lmod
+#   if opt-out file exists (see below)
+#
+# - no: simply links from prefix/lmod/lmod to /etc/profile.d (default)
+#
+# you can ad-hoc switch from opt-in to opt-out and from opt-out to no
+#
+lmod_canary: no
+
+# opt-in file name relative to a users home directory:
+# ~/{{ lmod_canary_opt_in_file }}
+#
+lmod_canary_opt_in_file: '.lmod-yes'
+
+# opt-out file name relative to a users home directory:
+# ~/{{ lmod_canary_opt_out_file }}
+#
+lmod_canary_opt_out_file: '.lmod-no'
+
+...

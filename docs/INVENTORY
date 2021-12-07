@@ -4,9 +4,3 @@ compute-02
 
 [manager]
 manager-01
-
-[nfs_node]
-nfs-node-01
-
-[login_node]
-login-node-01

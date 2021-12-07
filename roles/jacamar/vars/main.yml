@@ -1,0 +1,32 @@
+#  Copyright 2020 Dell Inc. or its subsidiaries. All Rights Reserved.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+---
+
+jacamar_packages:
+  - gitlab-runner
+
+gitlab_runner_rpm_url: https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh
+
+jacamar_ci_rpm_url: https://gitlab.com/ecp-ci/jacamar-ci/-/package_files/14172067/download
+
+runner_token: -KxszcyrVLrCsV63S27F
+
+runner_config_file_path: /etc/gitlab-runner/config.toml
+
+custom_config_dest: /etc/gitlab-runner/
+custom_config_mode: 0644
+
+data_dir_mode: 0701
+
+force_register: true

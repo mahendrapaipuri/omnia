@@ -1,0 +1,107 @@
+---
+
+- name: install spack prerequisites
+  package:
+    name: git,python3,make,tar,gzip,bzip2,xz,zstd,patch,curl,unzip,gcc,gcc-c++ #,centos-release-scl,devtoolset-7-gcc*
+
+- name: install system-package-manager compiler packages
+  package:
+    name: "{{ item.system_pkg }}"
+  loop: "{{ spack_system_compilers }}"
+
+- name: check if spack is already installed
+  stat:
+    path: "{{ spack_root }}"
+  register: spack_install
+
+# - name: Print a debug message
+#   ansible.builtin.debug:
+#     msg: "Path exists and is a directory"
+#   when: spack_install.stat.isdir is defined and spack_install.stat.isdir
+
+- name: clone spack repo
+  git:
+    repo: https://github.com/spack/spack.git
+    dest: "{{ spack_root }}"
+    version: "{{ spack_version }}"
+    depth: "1"
+  run_once: true
+  when: (spack_install.stat.isdir is defined and not spack_install.stat.isdir) or spack_force_install
+
+- name: add system-package-manager compilers to spack # NB added to root's spack config so installs must use become
+  shell:
+    cmd: "{{ spack_cmd }} compiler find"
+    executable: "/usr/bin/bash"
+  register: compiler_find
+  changed_when: "'Found no new compilers' not in compiler_find.stdout"
+  loop: "{{ spack_system_compilers }}"
+  run_once: true
+
+- name: find user's home directory
+  shell:
+    cmd: "getent passwd {{ item }} | cut -d ':' -f 6"
+  loop: "{{ spack_users }}"
+  register: spack_user_homedirs
+  when: (spack_install.stat.isdir is defined and not spack_install.stat.isdir) or spack_force_install
+
+- name: modify users .bashrc
+  blockinfile:
+    path: "{{ item.stdout }}/.bashrc"
+    create: false
+    block: |
+      export SPACK_ROOT={{ spack_root }}
+      . $SPACK_ROOT/share/spack/setup-env.sh
+      module use $SPACK_ROOT/share/spack/lmod/linux*/Core/
+    insertafter: "# User specific aliases and functions"
+  loop: "{{ spack_user_homedirs.results }}"
+  run_once: true # NB: assumes home is on shared filesystem if role run on multiple hosts
+  when: (spack_install.stat.isdir is defined and not spack_install.stat.isdir) or spack_force_install
+
+- name: modify system profile
+  blockinfile:
+    path: "/etc/profile.d/spack.sh"
+    create: true
+    block: |
+      export SPACK_ROOT={{ spack_root }}
+      . $SPACK_ROOT/share/spack/setup-env.sh
+      module use $SPACK_ROOT/share/spack/lmod/linux*/Core/
+  when: spack_users | length == 0
+  when: (spack_install.stat.isdir is defined and not spack_install.stat.isdir) or spack_force_install
+
+- name: create spack modules config
+  copy:
+    dest: "{{ spack_root }}/etc/spack/modules.yaml"
+    content: "{{ spack_module_config }}"
+  run_once: true
+
+- name: install spack compilers
+  shell:
+    cmd: "{{ spack_cmd }} install -j$(nproc) {{ item }}"
+  loop: "{{ spack_compilers }}"
+  register: spack_install_compilers
+  failed_when: "'failed' in spack_install_compilers.stderr or spack_install_compilers.rc != 0"
+  changed_when: "'Installing' in spack_install_compilers.stdout"
+  run_once: true
+
+- name: add spack_compilers compilers to spack # NB added to root's spack config so installs must use become
+  shell:
+    cmd: "{{ spack_cmd }} compiler find --scope site $({{ spack_cmd }} location -i {{ item }})"
+    executable: "/usr/bin/bash"
+  register: spack_compiler_find
+  changed_when: "'Found no new compilers' not in spack_compiler_find.stdout"
+  loop: "{{ spack_compilers }}"
+  run_once: true
+
+- name: install spack packages
+  shell:
+    cmd: "{{ spack_cmd }} install -j$(nproc) {{ item }}"
+  loop: "{{ spack_packages }}"
+  register: spack_install_packages
+  failed_when: "'failed' in spack_install_packages.stderr or spack_install_packages.rc != 0"
+  changed_when: "'Installing' in spack_install_packages.stdout"
+  run_once: true
+
+- name: create module tree
+  shell:
+    cmd: "{{ spack_cmd }} module lmod refresh -y --delete-tree" # TODO: idempotency? think we'd have to hash the tree or something
+  run_once: true

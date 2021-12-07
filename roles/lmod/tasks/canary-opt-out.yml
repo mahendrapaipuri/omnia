@@ -1,0 +1,20 @@
+---
+
+- name: remove opt-in skeleton files
+  import_tasks: canary-rm-opt-in-skel.yml
+
+- name: install canary opt-out scripts
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    follow: no
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - src: 'bash-opt-out.j2'
+      dest: '{{ lmod_init_bash_path }}'
+    - src: 'csh-opt-out.j2'
+      dest: '{{ lmod_init_csh_path }}'
+
+...

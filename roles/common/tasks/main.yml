@@ -27,40 +27,35 @@
     group: root
     mode: "{{ accelerator_discovery_script_mode }}"
 
-- name: Add epel-release repo
-  package:
-    name: epel-release
-    state: present
-  tags: install
-
 - name: Add elrepo GPG key
   rpm_key:
     state: present
     key: "{{ elrepo_gpg_key_url }}"
-  register: elrepo_gpg_key
-  until: elrepo_gpg_key is not failed
-  retries: 20
-  delay: 10
   tags: install
 
 - name: Add elrepo (nvidia kmod drivers)
   package:
     name: "{{ elrepo_rpm_url }}"
     state: present
-  register: elrepo
-  until: elrepo is not failed
-  retries: 20
-  delay: 10
   tags: install
+
+- name: enable powertools
+  community.general.ini_file:
+    path: /etc/yum.repos.d/CentOS-Linux-PowerTools.repo
+    section: powertools
+    option: enabled
+    value: "1"
+    mode: "0644"
+  notify:
+    - yum update cache
+  when:
+    - ansible_distribution in [ "CentOS", "EL" ]
+    - ansible_distribution_major_version >= "8"
 
 - name: Add docker community edition repository
   get_url:
     url: "{{ docker_repo_url }}"
     dest: "{{ docker_repo_dest }}"
-  register: docker_repo
-  until: docker_repo is not failed
-  retries: 20
-  delay: 10
   tags: install
 
 - name: Permanently Disable swap
@@ -151,42 +146,3 @@
   with_items:
     - "{{ groups['manager'] }}"
   when: "'compute' in group_names"
-
-- name: Add login node info in /etc/hosts of manager node
-  lineinfile:
-    dest: "{{ hosts_file_dest }}"
-    line: "{{ hostvars[item].node_ip }} {{ hostvars[item].node_hostname }}"
-    state: present
-    create: yes
-    mode: "{{ hosts_file_mode }}"
-  with_items:
-    - "{{ groups['login_node'] }}"
-  when:
-    - '"manager" in group_names'
-    - hostvars["127.0.0.1"]["login_node_required"]
-
-- name: Add manager info in /etc/hosts of login node
-  lineinfile:
-    dest: "{{ hosts_file_dest }}"
-    line: "{{ hostvars[item].node_ip }} {{ hostvars[item].node_hostname }}"
-    state: present
-    create: yes
-    mode: "{{ hosts_file_mode }}"
-  with_items:
-    - "{{ groups['manager'] }}"
-  when:
-    - '"login_node" in group_names'
-    - hostvars["127.0.0.1"]["login_node_required"]
-
-- name: Add compute info in /etc/hosts of login node
-  lineinfile:
-    dest: "{{ hosts_file_dest }}"
-    line: "{{ hostvars[item].node_ip }} {{ hostvars[item].node_hostname }}"
-    state: present
-    create: yes
-    mode: "{{ hosts_file_mode }}"
-  with_items:
-    - "{{ groups['compute'] }}"
-  when:
-    - hostvars["127.0.0.1"]["login_node_required"]
-    - '"login_node" in group_names'

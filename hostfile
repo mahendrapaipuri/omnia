@@ -1,0 +1,10 @@
+[compute]
+gros-29.nancy.grid5000.fr
+gros-34.nancy.grid5000.fr
+gros-45.nancy.grid5000.fr
+
+[manager]
+gros-22.nancy.grid5000.fr
+
+[nfs]
+gros-22.nancy.grid5000.fr

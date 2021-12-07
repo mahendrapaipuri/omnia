@@ -1,0 +1,16 @@
+---
+
+lmod_os_packages:
+  - lua
+  - lua-filesystem
+  - lua-json
+  - lua-lpeg
+  - lua-posix
+  - lua-term
+  - tcl
+  - tcl-devel
+
+lmod_lua_interpreter: /usr/bin/lua
+lmod_luac_interpreter: /usr/bin/luac
+
+...

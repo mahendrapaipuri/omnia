@@ -13,13 +13,10 @@
 #  limitations under the License.
 ---
 
-- name: Include common variables
-  include_vars: ../../slurm_exporter/vars/main.yml
-
 - name: Wait for CoreDNS to restart
-  command: kubectl rollout status deployment/coredns -n kube-system  --timeout=5m
+  command: kubectl rollout status deployment/coredns -n kube-system
   changed_when: false
-  failed_when: false
+  ignore_errors: True
   tags: init
 
 - name: Get K8s pods
@@ -70,18 +67,6 @@
   when: "'kubernetes-dashboard' not in k8s_pods.stdout"
   tags: init
 
-- name: Copy k8s_dashboard_admin.yml file
-  copy:
-    src: k8s_dashboard_admin.yaml
-    dest: "{{ k8s_dashboard_admin_file_dest }}"
-    owner: root
-    group: root
-    mode: "{{ k8s_dashboard_admin_file_mode }}"
-
-- name: Create admin user for K8s dashboard
-  command: "kubectl apply -f {{ k8s_dashboard_admin_file_dest }}"
-  changed_when: true
-
 - name: Helm - add stable repo
   command: "helm repo add stable '{{ helm_stable_repo_url }}'"
   changed_when: true
@@ -111,7 +96,7 @@
 - name: Set NFS-Client Provisioner as DEFAULT StorageClass
   shell: >
     kubectl patch storageclasses.storage.k8s.io nfs-client \
-    -p '{ "metadata": { "annotations":{ "storageclass.kubernetes.io/is-default-class":"true" }}}'
+    -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
   changed_when: true
   tags: init
 
@@ -150,8 +135,8 @@
 - name: Add the host IP to config file
   replace:
     path: "{{ slurm_exporter_config_file_path }}{{ slurm_exporter_config_file }}"
-    regexp: "localhost:8080"
-    replace: "{{ public_ip.stdout }}:{{ slurm_exporter_port }}"
+    regexp: "localhost"
+    replace: "{{ public_ip.stdout }}"
   tags: init
 
 - name: Prometheus deployment
@@ -195,53 +180,3 @@
   register: amd_gpu_enable
   when: "'amdgpu-device-plugin' not in k8s_pods.stdout"
   tags: init
-
-- name: Deploy Volcano Scheduling
-  command: "kubectl apply -f '{{ volcano_scheduling_yaml_url }}'"
-  changed_when: true
-  when: "'volcano-system' not in k8s_pods.stdout"
-  tags: init
-
-- name: Install Spark Operator
-  command: "helm repo add spark-operator '{{ spark_operator_repo }}'"
-  changed_when: true
-  tags: init
-
-- name: Install Spark Operator Namespace
-  command: helm install my-release spark-operator/spark-operator --set image.tag={{ operator_image_tag }} --namespace spark-operator --create-namespace
-  changed_when: true
-  when: "'spark-operator' not in k8s_pods.stdout"
-  tags: init
-
-- name: Wait for k8s pod to come to ready state
-  block:
-    - name: Wait for k8s pod to come to ready state
-      command: "kubectl wait --for=condition=ready -n {{ item.namespace }} pod -l app={{ item.app }} --timeout={{ item.timeout }}"
-      with_items:
-        - { namespace: "default", app: "nfs-client-provisioner", timeout: "10m" }
-        - { namespace: "volcano-system", app: "volcano-scheduler", timeout: "5m" }
-      changed_when: false
-      tags: install
-  rescue:
-    - name: Get K8s pods
-      command: kubectl get pods --all-namespaces
-      changed_when: false
-      register: k8s_pods
-      tags: init
-
-    - name: Fail message
-      fail:
-        msg: "{{ docker_pull_limit_msg }}"
-      when:
-        - "'ImagePullBackOff' in k8s_pods.stdout or 'ErrImagePull' in k8s_pods.stdout"
-        - not hostvars['127.0.0.1']['docker_username'] and not hostvars['127.0.0.1']['docker_password']
-
-    - name: Pull K8s services docker images
-      command: docker pull {{ item }}
-      with_items: "{{ k8s_docker_images }}"
-      when:
-        - "'ImagePullBackOff' in k8s_pods.stdout or 'ErrImagePull' in k8s_pods.stdout"
-        - hostvars['127.0.0.1']['docker_username'] and hostvars['127.0.0.1']['docker_password']
-      register: docker_image_pull_result
-      until: docker_image_pull_result is not failed
-      retries: 5

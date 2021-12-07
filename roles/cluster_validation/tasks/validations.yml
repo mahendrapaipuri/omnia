@@ -12,10 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ---
-- name: Validate skip tags
-  fail:
-    msg: "{{ skip_tag_fail_msg }}"
-  when: "'slurm' in ansible_skip_tags and 'kubernetes' in ansible_skip_tags"
+# - name: Validate skip tags
+#   fail:
+#     msg: "{{ skip_tag_fail_msg }}"
+#   when: "'slurm' in ansible_skip_tags and 'kubernetes' in ansible_skip_tags"
 
 - name: Manager group to contain exactly 1 node
   assert:

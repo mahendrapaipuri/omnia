@@ -1,0 +1,14 @@
+[general]
+    executor = "shell"
+    data_dir = "/tmp/ci"
+    job_message = """
+  ****************************************************************************
+                        NOTICE TO USERS
+
+  This is an example message ....
+  ****************************************************************************
+  """
+
+[auth]
+    downscope = "setuid"
+    root_dir_creation = true

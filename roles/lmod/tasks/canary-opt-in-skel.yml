@@ -1,0 +1,14 @@
+---
+
+- name: use opt-in canary
+  import_tasks: canary-opt-in.yml
+
+- name: install canary opt-in skeleton file
+  copy:
+    content: ''
+    dest: '/etc/skel/{{ lmod_canary_opt_in_file }}'
+    owner: root
+    group: root
+    mode: 0644
+
+...

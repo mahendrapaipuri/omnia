@@ -1,0 +1,20 @@
+---
+
+- name: remove opt-in skeleton files
+  import_tasks: canary-rm-opt-in-skel.yml
+
+- name: create shell configuration symlinks
+  file:
+    src: '{{ lmod_install_link }}/init/{{ item.src }}'
+    dest: '{{ item.dest }}'
+    owner: root
+    group: root
+    state: link
+    force: yes
+  with_items:
+    - src: 'profile'
+      dest: '{{ lmod_init_bash_path }}'
+    - src: 'cshrc'
+      dest: '{{ lmod_init_csh_path }}'
+
+...

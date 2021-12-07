@@ -1,0 +1,46 @@
+#  Copyright 2020 Dell Inc. or its subsidiaries. All Rights Reserved.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+---
+- name: Allow 'wheel' group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+# - name: Create a user for jacamar CI
+#   user:
+#     name: jacamar
+#     password: $6$rxf3wSfzbv.7r6F/$mcLGVpnJUcDqXQ1HxdlIleAP8r4..1bWDn.AtEE8sSgWsh1/F2Y.MfbXOzBON0DQQjDk/hM86jvCCiioYf.Nl/
+#     state: present
+#     shell: /bin/bash       # Defaults to /bin/bash
+#     createhome: yes        # Defaults to yes
+#     home: /shared/home/jacamar
+#     groups: wheel
+#     append: yes
+
+# - name: Set up authorized keys for the jacamar user
+#   authorized_key: user=jacamar key="{{item}}"
+#   with_file:
+#     - /home/railsdev/.ssh/id_rsa.pub
+
+- name: Create a mahendrapaipuri user
+  user:
+    name: mahendrapaipuri
+    password: $6$cG7ms2PrpzFv0aKZ$KD6rvcwHSxnQBeN./iTSKaP5rzb4jCRe/tgeAG8ZH.Sd0HrPFixsIfOxG1hOEP0oAAaTjXCGhFlpXsNFFx.29/
+    state: present
+    shell: /bin/bash       # Defaults to /bin/bash
+    createhome: yes        # Defaults to yes
+    home: /shared/home/mahendrapaipuri  # Defaults to shared/home/<username>

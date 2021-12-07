@@ -14,16 +14,14 @@
 ---
 
 common_packages:
-   - slurm-slurmd 
-   - slurm-pmi
    - munge
    - munge-libs
    - munge-devel
    - mariadb-server
    - mariadb-devel
    - man2html
-   - MySQL-python
-   - python-netaddr
+   # - MySQL-python
+   - python3-netaddr
 
 hostname_dest: "/etc/hostname"
 hosts_dest: "/etc/hosts"

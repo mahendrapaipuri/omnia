@@ -1,0 +1,81 @@
+#  Copyright 2020 Dell Inc. or its subsidiaries. All Rights Reserved.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+---
+
+- name: Get GitLab runner repo script
+  get_url:
+    url: "{{ gitlab_runner_rpm_url }}"
+    dest: /tmp/
+    mode: 0744
+
+- name: Execute GitLab runner repo rpm script
+  shell: bash script.rpm.sh
+  args:
+    chdir: /tmp/
+  register: verify_result
+  changed_when: "'The repository is setup' in verify_result.stdout"
+  tags: install
+
+- name: Install GitLab CI runner
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ jacamar_packages }}"
+  tags: install
+
+# - name: Install packages for jacamar CI
+#   package:
+#     name: "{{ jacamar_ci_rpm_url }}"
+#     state: present
+#   tags: install
+
+- name: Move Jacamar template config file to remote
+  copy:
+    src: config.template.toml
+    dest: /tmp/
+  tags: install
+
+- name: List configured runners
+  command: gitlab-runner list
+  register: configured_runners
+  changed_when: False
+
+- name: Register GitLab runner
+  script: register-runner.sh "{{ runner_token }}"
+  when: force_register #configured_runners.stderr.find('\n{{ gitlab_runner_description }}') == -1 | force_register
+  tags: install
+
+- name: Copy Jacamar custom config file
+  copy:
+    src: custom-config.toml
+    dest: "{{ custom_config_dest }}"
+    owner: root
+    group: root
+    mode: "{{ custom_config_mode }}"
+  tags: install
+
+- name: Create data directory for Jacamar CI jobs
+  file:
+    path: /tmp/ci
+    state: directory
+    mode: "{{ data_dir_mode }}"
+
+- name: Start Gitlab runner service
+  systemd:
+    name: gitlab-runner
+    state: restarted
+    enabled: yes
+  tags: install
+  ignore_errors: yes

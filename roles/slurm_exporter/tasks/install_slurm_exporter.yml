@@ -55,7 +55,7 @@
   args:
     chdir: "{{ slurm_exporter_inst_dir }}"
   changed_when: False
-  failed_when: false
+  ignore_errors: yes
 
 - name: Copy executable to /usr/bin
   copy:

@@ -1,0 +1,69 @@
+---
+
+- name: include os dependent variables
+  include_vars: >
+    {{ __lmod_os_distro }}.yml
+
+- name: install dependencies
+  include_tasks: 'deps-{{ ansible_os_family | lower }}.yml'
+
+# - name: create lmod installation directory if it does not exist
+#   ansible.builtin.file:
+#     path: '{{ lmod_install_dir }}'
+#     state: directory
+#     mode: '0755'
+#   run_once: true
+
+- name: check if lmod is installed
+  stat:
+    path: '{{ lmod_install_dir }}'
+  when: lmod_install
+  register: lmod_install_dir_s
+  check_mode: no
+  changed_when: >-
+    not lmod_install_dir_s.stat.exists
+  failed_when: no
+  run_once: true
+
+- name: installation
+  include_tasks: install.yml
+  when: >
+    lmod_install and
+    not lmod_install_dir_s.stat.exists
+  run_once: true
+
+- import_tasks: site-package.yml
+  when: >
+    lmod_install and lmod_site_package is defined
+  tags:
+    - lmod-site-package
+  run_once: true
+
+- name: configuration
+  import_tasks: config.yml
+  when: lmod_install
+  tags:
+    - lmod-config
+  run_once: true
+
+- name: module path file
+  template:
+    src: 'modulespath.j2'
+    dest: '{{ lmod_install_dir }}/init/.modulespath'
+    owner: root
+    group: root
+    mode: 0644
+  when: lmod_install and lmod_module_paths is defined
+
+- name: use canary release
+  include_tasks: 'canary-{{ lmod_canary }}.yml'
+  tags:
+    - lmod-canary
+
+- name: install spider cache cron
+  import_tasks: spider-cron.yml
+  when: lmod_spider_cache_cron
+  tags:
+    - lmod-spider-cache
+
+...
